@@ -6,9 +6,12 @@ using System.Web;
 using System.Web.Http;
 using System.Web.Http.Description;
 using Microsoft.AspNet.Identity;
+using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Builders;
 using MongoDB.Driver.Linq;
 using REST.Models;
+using WebGrease.Css.Extensions;
 
 namespace REST.Controllers
 {
@@ -28,7 +31,7 @@ namespace REST.Controllers
         {
             var server = _client.GetServer();
             var database = server.GetDatabase(DatabaseName);
-            var collection = database.GetCollection<Pulse>(User.Identity.Name + "Pulse");
+            var collection = database.GetCollection<Pulse>(User.Identity.GetUserName() + "Pulse");
             return collection.AsQueryable();
             /*if (HttpContext.Current == null || HttpContext.Current.User == null ||
                 HttpContext.Current.User.Identity.Name == null) 
@@ -60,19 +63,25 @@ namespace REST.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [ResponseType(typeof(Pulse))]
-        public async Task<IHttpActionResult> GetPulse(int id)
+        public async Task<IHttpActionResult> GetPulse(int id, [FromBody] ObjectId Id)
         {
-            var server = _client.GetServer();
-            var database = server.GetDatabase(DatabaseName);
-            var collection = database.GetCollection<Pulse>(User.Identity.Name + "Pulse");
-            var pulse = collection.FindOneById(id);
+            var pulse = await GetPulseAsync(id, Id);
             //Pulse pulse = await db.Pulses.FindAsync(id);
             //if (pulse == null)
             //{
             //    return NotFound();
             //}
-
             return Ok(pulse);
+        }
+
+        private Task<Pulse> GetPulseAsync(int id, ObjectId Id)
+        {
+            var server = _client.GetServer();
+            var database = server.GetDatabase(DatabaseName);
+            var collection = database.GetCollection<Pulse>(User.Identity.GetUserName() + "Pulse");
+            var query = Query.EQ("Id", Id);
+            var pulse = collection.FindOne(query);
+            return Task.FromResult(pulse);
         }
 
         // PUT: api/Pulses/5
@@ -129,6 +138,7 @@ namespace REST.Controllers
             var server = _client.GetServer();
             var database = server.GetDatabase(DatabaseName);
             var collection = database.GetCollection<Pulse>(User.Identity.Name + "Pulse");
+            pulse.Id = new ObjectId();
             collection.Insert(pulse);
             //if (!ModelState.IsValid)
             //{
@@ -139,7 +149,7 @@ namespace REST.Controllers
             //db.Pulses.Add(pulse);
             //await db.SaveChangesAsync();
 
-            return CreatedAtRoute("DefaultApi", new { id = pulse.Id }, pulse);
+            return CreatedAtRoute("DefaultApi", new { id = pulse.Id}, pulse);
         }
 
         // DELETE: api/Pulses/5
@@ -151,12 +161,14 @@ namespace REST.Controllers
         [ResponseType(typeof(Pulse))]
         public async Task<IHttpActionResult> DeletePulse(int id)
         {
+            var server = _client.GetServer();
+            var database = server.GetDatabase(DatabaseName);
             //Pulse pulse = await db.Pulses.FindAsync(id);
             //if (pulse == null)
             //{
             //    return NotFound();
             //}
-
+            
             //db.Pulses.Remove(pulse);
             //await db.SaveChangesAsync();
 

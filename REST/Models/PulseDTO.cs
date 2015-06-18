@@ -14,7 +14,8 @@ namespace REST.Models
         /// <summary>
         /// Id
         /// </summary>
-        public ObjectId Id { get; set; }
+        //public ObjectId Id { get; set; }
+        //public int Serial { get; set; }
         /// <summary>
         /// Pulse
         /// </summary>
