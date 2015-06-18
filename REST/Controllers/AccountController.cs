@@ -28,6 +28,7 @@ namespace REST.Controllers
     {
         private const string LocalLoginProvider = "Local";
         private UserManager<ApplicationUser> _userManager;
+        //private ApplicationUserManager _userManager;
 
         /// <summary>
         /// Create object with default params
@@ -57,7 +58,7 @@ namespace REST.Controllers
         {
             get
             {
-                return _userManager;
+                return _userManager ?? Request.GetOwinContext().GetUserManager<ApplicationUserManager>();
             }
             private set
             {
